@@ -1,0 +1,597 @@
+{
+  "updatedAt": "2026-11-24T23:00:00+09:00",
+  "seasonId": 35,
+  "seasonName": "Season 12",
+  "matchingMode": 3,
+  "tierOrder": [
+    "iron",
+    "bronze",
+    "silver",
+    "gold",
+    "platinum",
+    "diamond",
+    "meteorite",
+    "mithril",
+    "demigod",
+    "eternity"
+  ],
+  "players": [
+    {
+      "nickname": "새벽세시재키",
+      "status": "ok",
+      "rp": 9850,
+      "tier": "eternity",
+      "tierName": "이터니티",
+      "division": null,
+      "divStart": null,
+      "nextAt": null,
+      "rank": 120,
+      "serverRank": 120,
+      "rankSize": 61234,
+      "rankPercent": 0.2,
+      "games": 266,
+      "wins": 28,
+      "winRate": 10.5,
+      "top3Rate": 35.0,
+      "avgRank": 3.9,
+      "avgKills": 3.9,
+      "mains": [
+        {
+          "code": 1,
+          "name": "재키",
+          "games": 146,
+          "wins": 23,
+          "top3Rate": 48.0,
+          "avgRank": 3.2
+        },
+        {
+          "code": 22,
+          "name": "루크",
+          "games": 60,
+          "wins": 6,
+          "top3Rate": 50.0,
+          "avgRank": 5.0
+        },
+        {
+          "code": 29,
+          "name": "레온",
+          "games": 30,
+          "wins": 6,
+          "top3Rate": 50.0,
+          "avgRank": 3.5
+        }
+      ],
+      "memo": "디코 방장",
+      "query": "새벽세시재키"
+    },
+    {
+      "nickname": "아야는사랑",
+      "status": "ok",
+      "rp": 8720,
+      "tier": "demigod",
+      "tierName": "데미갓",
+      "division": null,
+      "divStart": null,
+      "nextAt": null,
+      "rank": 640,
+      "serverRank": 640,
+      "rankSize": 61234,
+      "rankPercent": 1.1,
+      "games": 94,
+      "wins": 11,
+      "winRate": 11.7,
+      "top3Rate": 37.0,
+      "avgRank": 5.2,
+      "avgKills": 3.8,
+      "mains": [
+        {
+          "code": 2,
+          "name": "아야",
+          "games": 51,
+          "wins": 6,
+          "top3Rate": 50.0,
+          "avgRank": 4.5
+        },
+        {
+          "code": 33,
+          "name": "니키",
+          "games": 21,
+          "wins": 1,
+          "top3Rate": 45.0,
+          "avgRank": 4.3
+        },
+        {
+          "code": 24,
+          "name": "아델라",
+          "games": 11,
+          "wins": 2,
+          "top3Rate": 47.0,
+          "avgRank": 5.4
+        }
+      ],
+      "query": "아야는사랑"
+    },
+    {
+      "nickname": "감자도리",
+      "status": "ok",
+      "rp": 7890,
+      "tier": "mithril",
+      "tierName": "미스릴",
+      "division": null,
+      "divStart": 7600,
+      "nextAt": 8300,
+      "rank": 2100,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 3.4,
+      "games": 102,
+      "wins": 11,
+      "winRate": 10.8,
+      "top3Rate": 47.0,
+      "avgRank": 4.8,
+      "avgKills": 4.1,
+      "mains": [
+        {
+          "code": 7,
+          "name": "현우",
+          "games": 56,
+          "wins": 5,
+          "top3Rate": 37.0,
+          "avgRank": 3.6
+        },
+        {
+          "code": 1,
+          "name": "재키",
+          "games": 23,
+          "wins": 4,
+          "top3Rate": 30.0,
+          "avgRank": 3.4
+        },
+        {
+          "code": 20,
+          "name": "레녹스",
+          "games": 11,
+          "wins": 1,
+          "top3Rate": 43.0,
+          "avgRank": 4.2
+        }
+      ],
+      "memo": "솔로 장인",
+      "query": "감자도리"
+    },
+    {
+      "nickname": "루미아순찰대",
+      "status": "ok",
+      "rp": 7120,
+      "tier": "meteorite",
+      "tierName": "메테오라이트",
+      "division": 2,
+      "divStart": 7000,
+      "nextAt": 7300,
+      "rank": 4300,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 7.0,
+      "games": 276,
+      "wins": 21,
+      "winRate": 7.6,
+      "top3Rate": 34.0,
+      "avgRank": 5.0,
+      "avgKills": 4.1,
+      "mains": [
+        {
+          "code": 11,
+          "name": "유키",
+          "games": 151,
+          "wins": 28,
+          "top3Rate": 38.0,
+          "avgRank": 5.2
+        },
+        {
+          "code": 1,
+          "name": "재키",
+          "games": 62,
+          "wins": 3,
+          "top3Rate": 40.0,
+          "avgRank": 3.5
+        },
+        {
+          "code": 35,
+          "name": "얀",
+          "games": 31,
+          "wins": 7,
+          "top3Rate": 45.0,
+          "avgRank": 3.8
+        }
+      ],
+      "query": "루미아순찰대"
+    },
+    {
+      "nickname": "치킨각",
+      "status": "ok",
+      "rp": 6200,
+      "tier": "diamond",
+      "tierName": "다이아몬드",
+      "division": 1,
+      "divStart": 6050,
+      "nextAt": 6400,
+      "rank": 9800,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 16.0,
+      "games": 79,
+      "wins": 12,
+      "winRate": 15.2,
+      "top3Rate": 48.0,
+      "avgRank": 4.4,
+      "avgKills": 3.5,
+      "mains": [
+        {
+          "code": 16,
+          "name": "실비아",
+          "games": 43,
+          "wins": 2,
+          "top3Rate": 52.0,
+          "avgRank": 3.1
+        },
+        {
+          "code": 2,
+          "name": "아야",
+          "games": 18,
+          "wins": 0,
+          "top3Rate": 60.0,
+          "avgRank": 5.2
+        },
+        {
+          "code": 14,
+          "name": "키아라",
+          "games": 9,
+          "wins": 1,
+          "top3Rate": 56.0,
+          "avgRank": 5.0
+        }
+      ],
+      "query": "치킨각"
+    },
+    {
+      "nickname": "솔방울요정",
+      "status": "ok",
+      "rp": 5480,
+      "tier": "diamond",
+      "tierName": "다이아몬드",
+      "division": 3,
+      "divStart": 5350,
+      "nextAt": 5700,
+      "rank": 15500,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 25.3,
+      "games": 166,
+      "wins": 19,
+      "winRate": 11.4,
+      "top3Rate": 34.0,
+      "avgRank": 5.0,
+      "avgKills": 3.7,
+      "mains": [
+        {
+          "code": 9,
+          "name": "아이솔",
+          "games": 91,
+          "wins": 13,
+          "top3Rate": 44.0,
+          "avgRank": 5.1
+        },
+        {
+          "code": 18,
+          "name": "쇼이치",
+          "games": 37,
+          "wins": 8,
+          "top3Rate": 39.0,
+          "avgRank": 4.3
+        },
+        {
+          "code": 1,
+          "name": "재키",
+          "games": 19,
+          "wins": 1,
+          "top3Rate": 45.0,
+          "avgRank": 3.5
+        }
+      ],
+      "query": "솔방울요정"
+    },
+    {
+      "nickname": "삼인큐대기중",
+      "status": "ok",
+      "rp": 4400,
+      "tier": "platinum",
+      "tierName": "플래티넘",
+      "division": 2,
+      "divStart": 4300,
+      "nextAt": 4650,
+      "rank": 24800,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 40.5,
+      "games": 102,
+      "wins": 10,
+      "winRate": 9.8,
+      "top3Rate": 46.0,
+      "avgRank": 3.3,
+      "avgKills": 2.1,
+      "mains": [
+        {
+          "code": 28,
+          "name": "수아",
+          "games": 56,
+          "wins": 7,
+          "top3Rate": 37.0,
+          "avgRank": 3.3
+        },
+        {
+          "code": 30,
+          "name": "일레븐",
+          "games": 23,
+          "wins": 4,
+          "top3Rate": 53.0,
+          "avgRank": 4.9
+        },
+        {
+          "code": 2,
+          "name": "아야",
+          "games": 11,
+          "wins": 1,
+          "top3Rate": 40.0,
+          "avgRank": 4.2
+        }
+      ],
+      "query": "삼인큐대기중"
+    },
+    {
+      "nickname": "맹독쇼이치",
+      "status": "ok",
+      "rp": 3720,
+      "tier": "platinum",
+      "tierName": "플래티넘",
+      "division": 4,
+      "divStart": 3600,
+      "nextAt": 3950,
+      "rank": 30100,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 49.2,
+      "games": 84,
+      "wins": 17,
+      "winRate": 20.2,
+      "top3Rate": 51.0,
+      "avgRank": 4.5,
+      "avgKills": 3.5,
+      "mains": [
+        {
+          "code": 18,
+          "name": "쇼이치",
+          "games": 46,
+          "wins": 5,
+          "top3Rate": 49.0,
+          "avgRank": 4.9
+        },
+        {
+          "code": 23,
+          "name": "캐시",
+          "games": 19,
+          "wins": 2,
+          "top3Rate": 37.0,
+          "avgRank": 4.4
+        },
+        {
+          "code": 7,
+          "name": "현우",
+          "games": 9,
+          "wins": 1,
+          "top3Rate": 60.0,
+          "avgRank": 3.0
+        }
+      ],
+      "query": "맹독쇼이치"
+    },
+    {
+      "nickname": "한판만더",
+      "status": "ok",
+      "rp": 2950,
+      "tier": "gold",
+      "tierName": "골드",
+      "division": 3,
+      "divStart": 2700,
+      "nextAt": 3000,
+      "rank": 37600,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 61.4,
+      "games": 135,
+      "wins": 23,
+      "winRate": 17.0,
+      "top3Rate": 47.0,
+      "avgRank": 3.4,
+      "avgKills": 3.4,
+      "mains": [
+        {
+          "code": 1,
+          "name": "재키",
+          "games": 74,
+          "wins": 6,
+          "top3Rate": 44.0,
+          "avgRank": 3.6
+        },
+        {
+          "code": 38,
+          "name": "제니",
+          "games": 30,
+          "wins": 6,
+          "top3Rate": 51.0,
+          "avgRank": 4.0
+        },
+        {
+          "code": 19,
+          "name": "엠마",
+          "games": 15,
+          "wins": 2,
+          "top3Rate": 37.0,
+          "avgRank": 5.2
+        }
+      ],
+      "memo": "자기 전에 딱 한 판",
+      "query": "한판만더"
+    },
+    {
+      "nickname": "어제의나",
+      "status": "ok",
+      "rp": 2210,
+      "tier": "silver",
+      "tierName": "실버",
+      "division": 1,
+      "divStart": 2150,
+      "nextAt": 2400,
+      "rank": 44200,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 72.2,
+      "games": 170,
+      "wins": 29,
+      "winRate": 17.1,
+      "top3Rate": 34.0,
+      "avgRank": 3.1,
+      "avgKills": 3.8,
+      "mains": [
+        {
+          "code": 5,
+          "name": "자히르",
+          "games": 93,
+          "wins": 21,
+          "top3Rate": 46.0,
+          "avgRank": 3.1
+        },
+        {
+          "code": 12,
+          "name": "혜진",
+          "games": 38,
+          "wins": 4,
+          "top3Rate": 49.0,
+          "avgRank": 3.1
+        },
+        {
+          "code": 36,
+          "name": "이바",
+          "games": 19,
+          "wins": 1,
+          "top3Rate": 35.0,
+          "avgRank": 3.5
+        }
+      ],
+      "query": "어제의나"
+    },
+    {
+      "nickname": "랭겜금지령",
+      "status": "ok",
+      "rp": 1100,
+      "tier": "bronze",
+      "tierName": "브론즈",
+      "division": 2,
+      "divStart": 1000,
+      "nextAt": 1200,
+      "rank": 52800,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 86.2,
+      "games": 132,
+      "wins": 9,
+      "winRate": 6.8,
+      "top3Rate": 49.0,
+      "avgRank": 5.0,
+      "avgKills": 3.8,
+      "mains": [
+        {
+          "code": 3,
+          "name": "피오라",
+          "games": 72,
+          "wins": 15,
+          "top3Rate": 39.0,
+          "avgRank": 3.5
+        },
+        {
+          "code": 4,
+          "name": "매그너스",
+          "games": 30,
+          "wins": 2,
+          "top3Rate": 50.0,
+          "avgRank": 3.4
+        },
+        {
+          "code": 27,
+          "name": "알렉스",
+          "games": 15,
+          "wins": 1,
+          "top3Rate": 33.0,
+          "avgRank": 3.9
+        }
+      ],
+      "query": "랭겜금지령"
+    },
+    {
+      "nickname": "오늘도패배",
+      "status": "ok",
+      "rp": 420,
+      "tier": "iron",
+      "tierName": "아이언",
+      "division": 2,
+      "divStart": 300,
+      "nextAt": 450,
+      "rank": 59100,
+      "serverRank": null,
+      "rankSize": 61234,
+      "rankPercent": 96.5,
+      "games": 152,
+      "wins": 14,
+      "winRate": 9.2,
+      "top3Rate": 47.0,
+      "avgRank": 4.7,
+      "avgKills": 1.9,
+      "mains": [
+        {
+          "code": 6,
+          "name": "나딘",
+          "games": 83,
+          "wins": 12,
+          "top3Rate": 54.0,
+          "avgRank": 2.8
+        },
+        {
+          "code": 8,
+          "name": "하트",
+          "games": 34,
+          "wins": 2,
+          "top3Rate": 34.0,
+          "avgRank": 3.6
+        },
+        {
+          "code": 10,
+          "name": "리 다이린",
+          "games": 17,
+          "wins": 4,
+          "top3Rate": 32.0,
+          "avgRank": 4.7
+        }
+      ],
+      "query": "오늘도패배"
+    },
+    {
+      "nickname": "없는닉네임",
+      "status": "not_found",
+      "query": "없는닉네임"
+    },
+    {
+      "nickname": "휴면중",
+      "status": "unranked",
+      "query": "휴면중"
+    }
+  ]
+}

@@ -1,0 +1,426 @@
+#!/usr/bin/env python3
+"""
+players.txt에 적힌 사람들의 이터널 리턴 랭크 정보(RP, 티어, 주챔)를
+Open API에서 모아 data/players.json으로 저장합니다.
+
+사용법 (로컬):
+    1) 프로젝트 폴더에 .env 파일을 만들고  ER_API_KEY=발급받은키  한 줄을 적습니다.
+    2) python scripts/fetch_data.py
+
+환경 변수:
+    ER_API_KEY    (필수) Open API 키
+    ER_SEASON_ID  (선택) 시즌 ID를 직접 지정. 비우면 현재 시즌을 자동으로 찾습니다.
+    ER_DELAY      (선택) 요청 사이 대기 시간(초). 기본 1.1초
+    ER_API_BASE   (선택) API 주소. 기본 https://open-api.bser.io
+
+표준 라이브러리만 사용하므로 따로 설치할 패키지는 없습니다.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+KST = timezone(timedelta(hours=9))
+
+MATCHING_MODE_RANKED = 3  # 랭크 게임 (스쿼드)
+MATCHING_TEAM_MODE_SQUAD = 3
+
+# ── 티어 구간 ─────────────────────────────────────────────────────────────
+# 시즌마다 바뀔 수 있어요. 게임 내 구간이 바뀌면 여기 숫자만 고치면 됩니다.
+# (키, 이름, 디비전별 시작 RP)  디비전이 있는 티어는 [4, 3, 2, 1] 순서예요.
+TIERS = [
+    ("iron", "아이언", [0, 150, 300, 450]),
+    ("bronze", "브론즈", [600, 800, 1000, 1200]),
+    ("silver", "실버", [1400, 1650, 1900, 2150]),
+    ("gold", "골드", [2400, 2700, 3000, 3300]),
+    ("platinum", "플래티넘", [3600, 3950, 4300, 4650]),
+    ("diamond", "다이아몬드", [5000, 5350, 5700, 6050]),
+    ("meteorite", "메테오라이트", [6400, 6700, 7000, 7300]),
+    ("mithril", "미스릴", [7600]),
+]
+TOP_TIER_MIN_RP = 8300  # 데미갓·이터니티가 되려면 최소 이 RP 이상
+ETERNITY_MAX_RANK = 300  # 순위 300위 이내 → 이터니티
+DEMIGOD_MAX_RANK = 1000  # 순위 1000위 이내 → 데미갓
+TIER_ORDER = [t[0] for t in TIERS] + ["demigod", "eternity"]
+
+
+def log(msg: str) -> None:
+    print(msg, flush=True)
+
+
+# ── API ──────────────────────────────────────────────────────────────────
+class ApiError(Exception):
+    def __init__(self, status: int, message: str):
+        super().__init__(f"{status} {message}".strip())
+        self.status = status
+
+
+class Api:
+    RETRYABLE = {403, 429, 500, 502, 503, 504}
+
+    def __init__(self, key: str, base: str, delay: float):
+        self.key = key
+        self.base = base.rstrip("/")
+        self.delay = delay
+        self.calls = 0
+        self._last = 0.0
+
+    def _throttle(self) -> None:
+        wait = self.delay - (time.monotonic() - self._last)
+        if wait > 0:
+            time.sleep(wait)
+        self._last = time.monotonic()
+
+    def get(self, path: str, params: dict | None = None, retries: int = 3):
+        """요청을 보내고 응답의 실제 내용(code, message를 뺀 나머지 키)을 돌려줍니다."""
+        url = f"{self.base}/{path.lstrip('/')}"
+        if params:
+            url += "?" + urllib.parse.urlencode(params)
+        headers = {"x-api-key": self.key, "Accept": "application/json", "User-Agent": "er-rank-board/1.0"}
+
+        for attempt in range(retries + 1):
+            self._throttle()
+            self.calls += 1
+            status, message, body = 0, "", None
+            try:
+                with urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=20) as res:
+                    body = json.loads(res.read().decode("utf-8"))
+                status = int(body.get("code", 200))
+                message = body.get("message", "")
+            except urllib.error.HTTPError as e:
+                status, message = e.code, str(e.reason)
+            except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as e:
+                status, message = 0, str(e)
+
+            if status == 200:
+                return unwrap(body)
+            # 호출 제한(429/403)이나 일시적인 서버 오류면 잠깐 쉬었다 다시 시도
+            if (status in self.RETRYABLE or status == 0) and attempt < retries:
+                time.sleep(3 * (2**attempt))
+                continue
+            raise ApiError(status, message)
+        raise ApiError(0, "unreachable")
+
+
+def unwrap(body: dict):
+    """{code, message, <내용>} 형태의 응답에서 <내용>만 꺼냅니다."""
+    for k, v in body.items():
+        if k not in ("code", "message"):
+            return v
+    return None
+
+
+def download_text(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": "er-rank-board/1.0"})
+    with urllib.request.urlopen(req, timeout=60) as res:
+        return res.read().decode("utf-8-sig", errors="replace")
+
+
+# ── 게임 데이터 ──────────────────────────────────────────────────────────
+def pick(d: dict, *keys, default=None):
+    for k in keys:
+        if isinstance(d, dict) and d.get(k) is not None:
+            return d[k]
+    return default
+
+
+def resolve_season(api: Api) -> tuple[int, str | None]:
+    override = os.environ.get("ER_SEASON_ID", "").strip()
+    names: dict[int, str] = {}
+    current = None
+    try:
+        for row in api.get("v2/data/Season") or []:
+            sid = pick(row, "seasonID", "seasonId", "id")
+            if sid is None:
+                continue
+            names[int(sid)] = pick(row, "seasonName", "name")
+            if str(pick(row, "isCurrent", default=0)).lower() in ("1", "true"):
+                current = int(sid)
+    except ApiError as e:
+        if not override:
+            raise
+        log(f"  시즌 목록을 못 불러왔지만 ER_SEASON_ID={override}로 계속합니다 ({e})")
+
+    if override:
+        sid = int(override)
+    elif current is not None:
+        sid = current
+    else:
+        raise SystemExit("현재 시즌을 찾지 못했어요. ER_SEASON_ID 환경 변수로 시즌 ID를 직접 지정해 주세요.")
+    return sid, names.get(sid)
+
+
+L10N_CHARACTER = re.compile(r"Character/Name/(\d+)\s*[┃|\t]\s*(.+?)\s*$")
+
+
+def character_names(api: Api) -> dict[int, str]:
+    """캐릭터 코드 → 이름. 한국어 이름을 우선 쓰고, 실패하면 영어 이름을 씁니다."""
+    names: dict[int, str] = {}
+    try:
+        for row in api.get("v2/data/Character") or []:
+            code = pick(row, "code", "characterCode")
+            if code is not None:
+                names[int(code)] = pick(row, "name", default=f"#{code}")
+    except ApiError as e:
+        log(f"  캐릭터 목록을 못 불러왔어요 ({e})")
+
+    try:
+        l10n = api.get("v1/l10n/Korean")
+        path = pick(l10n, "l10Path", "l10nPath", "path") if isinstance(l10n, dict) else None
+        if path:
+            found = 0
+            for line in download_text(path).splitlines():
+                m = L10N_CHARACTER.search(line)
+                if m:
+                    names[int(m.group(1))] = m.group(2)
+                    found += 1
+            if not found:
+                log("  한국어 데이터에서 캐릭터 이름을 찾지 못해 영어 이름을 씁니다.")
+    except (ApiError, urllib.error.URLError, TimeoutError) as e:
+        log(f"  한국어 이름을 못 불러와서 영어 이름을 씁니다 ({e})")
+    return names
+
+
+# ── 티어 계산 ────────────────────────────────────────────────────────────
+def tier_of(rp: int, rank: int | None) -> dict:
+    if rp >= TOP_TIER_MIN_RP and rank:
+        if rank <= ETERNITY_MAX_RANK:
+            return {"tier": "eternity", "tierName": "이터니티", "division": None, "divStart": None, "nextAt": None}
+        if rank <= DEMIGOD_MAX_RANK:
+            return {"tier": "demigod", "tierName": "데미갓", "division": None, "divStart": None, "nextAt": None}
+
+    steps = []  # (시작 RP, 키, 이름, 디비전)
+    for key, name, starts in TIERS:
+        for i, start in enumerate(starts):
+            steps.append((start, key, name, len(starts) - i if len(starts) > 1 else None))
+    current = steps[0]
+    nxt = None
+    for idx, step in enumerate(steps):
+        if rp >= step[0]:
+            current = step
+            nxt = steps[idx + 1][0] if idx + 1 < len(steps) else TOP_TIER_MIN_RP
+    if current[1] == "mithril" and rp >= TOP_TIER_MIN_RP:
+        nxt = None  # RP는 충분하고 순위만 남은 상태
+    return {"tier": current[1], "tierName": current[2], "division": current[3], "divStart": current[0], "nextAt": nxt}
+
+
+def as_percent(value, games: int | None = None):
+    """API가 비율(0~1)이나 횟수로 주는 값을 퍼센트(0~100)로 맞춥니다."""
+    if value is None:
+        return None
+    value = float(value)
+    if value <= 1:
+        return round(value * 100, 1)
+    if games:
+        return round(value / games * 100, 1)
+    return round(value, 1)
+
+
+# ── 플레이어 ─────────────────────────────────────────────────────────────
+def fetch_player(api: Api, nickname: str, season_id: int, names: dict[int, str]) -> dict:
+    entry: dict = {"nickname": nickname}
+    try:
+        user = api.get("v1/user/nickname", {"query": nickname})
+    except ApiError as e:
+        if e.status == 404:
+            return {**entry, "status": "not_found"}
+        raise
+    user_id = pick(user, "userId", "uid", "userNum")
+    if not user_id:
+        return {**entry, "status": "not_found"}
+    entry["nickname"] = pick(user, "nickname", default=nickname)
+    uid = urllib.parse.quote(str(user_id), safe="")
+
+    try:
+        stats_list = api.get(f"v2/user/stats/uid/{uid}/{season_id}/{MATCHING_MODE_RANKED}") or []
+    except ApiError as e:
+        if e.status == 404:
+            return {**entry, "status": "unranked"}
+        raise
+    if isinstance(stats_list, dict):
+        stats_list = [stats_list]
+    stats = next((s for s in stats_list if pick(s, "matchingMode") == MATCHING_MODE_RANKED), None)
+    stats = stats or (stats_list[0] if stats_list else None)
+    games = int(pick(stats, "totalGames", default=0) or 0)
+    if not stats or games == 0:
+        return {**entry, "status": "unranked"}
+
+    rp = int(pick(stats, "mmr", default=0) or 0)
+    rank = pick(stats, "rank")
+    rank_size = pick(stats, "rankSize")
+    server_rank = None
+    if rp >= TOP_TIER_MIN_RP:
+        # 데미갓·이터니티는 서버 순위로 정해지므로 서버 순위를 한 번 더 조회
+        try:
+            r = api.get(f"v1/rank/uid/{uid}/{season_id}/{MATCHING_TEAM_MODE_SQUAD}") or {}
+            server_rank = pick(r, "serverRank")
+            rank = rank or pick(r, "rank")
+        except ApiError as e:
+            log(f"    서버 순위 조회 실패 ({e}), 전체 순위로 대신 계산해요")
+
+    rank_percent = as_percent(pick(stats, "rankPercent"))
+    if rank_percent is None and rank and rank_size:
+        rank_percent = round(rank / rank_size * 100, 1)
+
+    mains = []
+    chars = sorted(
+        pick(stats, "characterStats", default=[]) or [],
+        key=lambda c: int(pick(c, "totalGames", "usages", default=0) or 0),
+        reverse=True,
+    )
+    for c in chars:
+        c_games = int(pick(c, "totalGames", "usages", default=0) or 0)
+        if c_games <= 0 or len(mains) >= 3:
+            break
+        code = int(pick(c, "characterCode", default=0))
+        mains.append({
+            "code": code,
+            "name": names.get(code, f"#{code}"),
+            "games": c_games,
+            "wins": int(pick(c, "wins", default=0) or 0),
+            "top3Rate": as_percent(pick(c, "top3Rate", "top3"), c_games),
+            "avgRank": pick(c, "averageRank"),
+        })
+
+    wins = int(pick(stats, "totalWins", default=0) or 0)
+    return {
+        **entry,
+        "status": "ok",
+        "rp": rp,
+        **tier_of(rp, server_rank or rank),
+        "rank": rank,
+        "serverRank": server_rank,
+        "rankSize": rank_size,
+        "rankPercent": rank_percent,
+        "games": games,
+        "wins": wins,
+        "winRate": round(wins / games * 100, 1) if games else None,
+        "top3Rate": as_percent(pick(stats, "top3"), games),
+        "avgRank": pick(stats, "averageRank"),
+        "avgKills": pick(stats, "averageKills"),
+        "mains": mains,
+    }
+
+
+def read_players(path: Path) -> list[tuple[str, str | None]]:
+    players, seen = [], set()
+    for raw in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        nick, _, memo = line.partition(",")
+        nick, memo = nick.strip(), memo.strip() or None
+        if nick and nick.lower() not in seen:
+            seen.add(nick.lower())
+            players.append((nick, memo))
+    return players
+
+
+def load_env_file(path: Path) -> None:
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8-sig").splitlines():
+        k, sep, v = line.strip().partition("=")
+        if sep and not k.startswith("#") and k.strip() not in os.environ:
+            os.environ[k.strip()] = v.strip().strip('"').strip("'")
+
+
+def summary(p: dict) -> str:
+    if p.get("status") == "ok":
+        div = f" {p['division']}" if p.get("division") else ""
+        mains = ", ".join(m["name"] for m in p.get("mains", [])) or "-"
+        return f"{p['tierName']}{div} {p['rp']:,} RP / {p['games']}판 / 주챔: {mains}"
+    return {"not_found": "닉네임을 찾을 수 없음", "unranked": "이번 시즌 랭크 기록 없음"}.get(p.get("status"), p.get("error", "오류"))
+
+
+def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # 어떤 콘솔에서도 한글 출력 때문에 멈추지 않게
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--players", type=Path, default=ROOT / "players.txt")
+    ap.add_argument("--out", type=Path, default=ROOT / "data" / "players.json")
+    args = ap.parse_args()
+
+    load_env_file(ROOT / ".env")
+    key = os.environ.get("ER_API_KEY", "").strip()
+    if not key:
+        log("ER_API_KEY가 없어요. GitHub Secrets 또는 .env 파일에 API 키를 넣어 주세요.")
+        return 1
+
+    players = read_players(args.players)
+    if not players:
+        log(f"{args.players}에 닉네임이 없어요.")
+        return 1
+
+    previous = {}
+    if args.out.exists():
+        try:
+            old = json.loads(args.out.read_text(encoding="utf-8"))
+            previous = {p["nickname"].lower(): p for p in old.get("players", []) if p.get("status") == "ok"}
+            previous_season = old.get("seasonId")
+        except (json.JSONDecodeError, KeyError):
+            previous, previous_season = {}, None
+    else:
+        previous_season = None
+
+    api = Api(key, os.environ.get("ER_API_BASE", "https://open-api.bser.io"), float(os.environ.get("ER_DELAY", "1.1")))
+    log("시즌 정보를 불러오는 중...")
+    try:
+        season_id, season_name = resolve_season(api)
+    except ApiError as e:
+        hint = " API 키가 맞는지, 호출 제한에 걸리지 않았는지 확인해 주세요." if e.status in (401, 403, 429) else ""
+        log(f"시즌 정보를 불러오지 못했어요 ({e}).{hint}")
+        return 1
+    log(f"  시즌 ID {season_id} ({season_name or '이름 없음'})")
+    log("캐릭터 이름을 불러오는 중...")
+    names = character_names(api)
+    log(f"  캐릭터 {len(names)}명")
+
+    results, failed = [], 0
+    for i, (nick, memo) in enumerate(players, 1):
+        try:
+            p = fetch_player(api, nick, season_id, names)
+        except ApiError as e:
+            failed += 1
+            old = previous.get(nick.lower()) if previous_season == season_id else None
+            p = {**old, "stale": True} if old else {"nickname": nick, "status": "error", "error": str(e)}
+            p["error"] = str(e)
+        if memo:
+            p["memo"] = memo
+        p["query"] = nick
+        results.append(p)
+        log(f"[{i}/{len(players)}] {nick}: {summary(p)}{' (지난 데이터 유지)' if p.get('stale') else ''}")
+
+    if failed == len(players):
+        log("모든 조회가 실패해서 기존 데이터를 그대로 둡니다. API 키와 호출 제한을 확인해 주세요.")
+        return 1
+
+    out = {
+        "updatedAt": datetime.now(KST).isoformat(timespec="seconds"),
+        "seasonId": season_id,
+        "seasonName": season_name,
+        "matchingMode": MATCHING_MODE_RANKED,
+        "tierOrder": TIER_ORDER,
+        "players": results,
+    }
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    tmp = args.out.with_suffix(".tmp")
+    tmp.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(args.out)
+    log(f"완료: {len(results)}명 저장 (실패 {failed}명, API 호출 {api.calls}회) → {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
