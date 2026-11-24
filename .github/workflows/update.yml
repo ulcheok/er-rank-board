@@ -25,9 +25,9 @@ jobs:
     outputs:
       fetch: ${{ steps.fetch.outcome }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
 
@@ -59,7 +59,7 @@ jobs:
           cp index.html _site/
           cp data/*.json _site/data/
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
 
@@ -71,7 +71,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   # 데이터 가져오기가 실패했으면 사이트 배포 후에 실행 결과를 빨간색(실패)으로 표시
   report:
