@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>우리끼리 랭크: 이터널 리턴 랭크 티어와 주챔</title>
-<meta name="description" content="친구들의 이터널 리턴 랭크 티어, RP, 많이 하는 실험체를 3시간마다 갱신해서 보여 줍니다.">
+<title>퍼리 내전방: 이터널 리턴 랭크 티어와 주챔</title>
+<meta name="description" content="내전방 멤버들의 이터널 리턴 최고 티어, 현재 티어, 많이 하는 실험체를 3시간마다 갱신해서 보여 줍니다.">
 <meta name="theme-color" content="#f3f1ec" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#131211" media="(prefers-color-scheme: dark)">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -76,18 +76,31 @@
   .notice { font-size: 14px; color: var(--ink-2); padding: 12px 0; border-bottom: 1px solid var(--line); }
 
   /* 머리 */
-  header { padding: 64px 0 40px; border-bottom: 1px solid var(--ink); }
+  header {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px 32px;
+    padding: 64px 0 32px; border-bottom: 1px solid var(--ink);
+  }
   h1 {
     font-size: clamp(36px, 5.2vw, 60px); line-height: 1.05; font-weight: 500;
     letter-spacing: -0.04em; margin: 0;
   }
-  .lede { font-size: 18px; line-height: 1.6; color: var(--ink-2); max-width: 40em; margin: 20px 0 0; }
-  .lede b { font-weight: 600; color: var(--ink); }
   .stamp { font-size: 13px; color: var(--muted); margin: 14px 0 0; }
+
+  /* 최고/현재 티어 전환 */
+  .mode { display: inline-flex; padding: 3px; border: 1px solid var(--line-2); border-radius: 24px; }
+  .mode[hidden] { display: none; }
+  .mode button {
+    font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-2); background: none; cursor: pointer;
+    border: 0; height: 40px; padding: 0 18px; border-radius: 20px;
+    transition: background-color .15s, color .15s, transform .1s;
+  }
+  .mode button:hover { color: var(--ink); }
+  .mode button:active { transform: scale(.97); }
+  .mode button[aria-pressed="true"] { color: var(--bg); background: var(--ink); }
+
   @media (prefers-reduced-motion: no-preference) {
     .enter { animation: enter .6s cubic-bezier(.2, .7, .2, 1) both; }
     .enter-2 { animation-delay: .08s; }
-    .enter-3 { animation-delay: .16s; }
     @keyframes enter { from { opacity: 0; transform: translateY(10px); } }
   }
 
@@ -102,9 +115,9 @@
   .dist .tn i { width: 8px; height: 8px; transform: rotate(45deg); background: var(--tc); flex: none; }
   .dist .track { height: 10px; position: relative; }
   .dist .track::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid var(--line); }
-  .dist .bar { display: block; position: relative; height: 100%; background: var(--tc); transform-origin: left; }
+  .dist .bar { display: block; position: relative; height: 100%; background: var(--tc); transform-origin: left; transition: width .35s cubic-bezier(.2, .7, .2, 1); }
   @media (prefers-reduced-motion: no-preference) {
-    .dist .bar { animation: grow .7s cubic-bezier(.2, .7, .2, 1) .15s both; }
+    .dist.first .bar { animation: grow .7s cubic-bezier(.2, .7, .2, 1) .15s both; }
     @keyframes grow { from { transform: scaleX(0); } }
   }
   .dist .cnt { font-size: 14px; text-align: right; }
@@ -208,8 +221,9 @@
   }
   @media (max-width: 560px) {
     .wrap { padding: 0 20px; }
-    header { padding: 40px 0 28px; }
-    .lede { font-size: 16px; }
+    header { padding: 40px 0 24px; }
+    .mode { width: 100%; }
+    .mode button { flex: 1; height: 44px; border-radius: 22px; }
     .sorts { width: 100%; }
     .sorts button { flex: 1 0 auto; padding: 0 10px; height: 44px; border-radius: 22px; }
     .dist li { grid-template-columns: 84px 1fr 36px; }
@@ -220,20 +234,25 @@
 <div class="wrap">
   <div id="notice"></div>
   <header>
-    <h1 id="title" class="enter"></h1>
-    <p class="lede enter enter-2" id="lede"></p>
-    <p class="stamp enter enter-3" id="stamp"></p>
+    <div>
+      <h1 id="title" class="enter"></h1>
+      <p class="stamp enter enter-2" id="stamp"></p>
+    </div>
+    <div class="mode enter enter-2" id="mode" role="group" aria-label="티어 기준" hidden>
+      <button type="button" data-mode="peak" aria-pressed="true">최고 티어</button>
+      <button type="button" data-mode="current" aria-pressed="false">현재 티어</button>
+    </div>
   </header>
   <main id="app"><div class="empty">불러오는 중</div></main>
   <footer>
     <span>데이터: 이터널 리턴 Open API, 3시간마다 갱신</span>
-    <span>티어는 RP와 순위로 계산해서 게임 화면과 조금 다를 수 있어요.</span>
+    <span>최고 티어는 이번 시즌 최고 RP, 시즌 11부터의 시즌 최종 RP, 그 전 시즌 기록 중 가장 높은 값이에요.</span>
   </footer>
 </div>
 
 <script>
   // ── 여기만 바꾸면 사이트 제목이 바뀌어요 ──
-  const SITE_TITLE = "우리끼리 랭크";
+  const SITE_TITLE = "퍼리 내전방";
 
   const TIERS = [
     ["iron", "아이언"], ["bronze", "브론즈"], ["silver", "실버"], ["gold", "골드"],
@@ -267,15 +286,40 @@
     return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
+  const state = { mode: "peak", sort: "tier", q: "" };
+  let DATA = null;
+  let firstPaint = true;
+
+  // 지금 보는 기준(최고/현재)의 티어. 없으면 null.
+  function view(p) {
+    if (state.mode === "peak") {
+      const k = p.peak;
+      if (!k) return null;
+      const note = k.source === "manual"
+        ? `${k.season ? k.season + " · " : ""}직접 입력 · RP는 티어 최저치`
+        : (k.source === "current" ? "이번 시즌 기록" : `${k.season} 기록`);
+      return { tier: k.tier, tierName: k.tierName, division: k.division, rp: k.rp, note, progress: null };
+    }
+    if (p.status !== "ok") return null;
+    const crown = p.tier === "demigod" || p.tier === "eternity";
+    const progress = p.nextAt && p.divStart != null
+      ? Math.max(0, Math.min(1, (p.rp - p.divStart) / (p.nextAt - p.divStart))) : (crown ? 1 : null);
+    const note = p.nextAt ? `다음 단계까지 ${num(p.nextAt - p.rp)} RP` : (crown ? "서버 순위로 정해지는 티어" : "1000위 안에 들면 데미갓");
+    return { tier: p.tier, tierName: p.tierName, division: p.division, rp: p.rp, note, progress };
+  }
+  const byTier = (a, b) => {
+    const va = view(a), vb = view(b);
+    return (TIER_IDX[vb.tier] - TIER_IDX[va.tier]) || (vb.rp - va.rp);
+  };
+  const cur = (p, k, fallback) => (p.status === "ok" && p[k] != null ? p[k] : fallback);
+
   const SORTS = {
-    tier: { label: "티어", fn: (a, b) => (TIER_IDX[b.tier] - TIER_IDX[a.tier]) || (b.rp - a.rp) },
-    games: { label: "판수", fn: (a, b) => b.games - a.games },
-    winRate: { label: "승률", fn: (a, b) => (b.winRate ?? -1) - (a.winRate ?? -1) },
-    avgRank: { label: "평균 순위", fn: (a, b) => (a.avgRank ?? 99) - (b.avgRank ?? 99) },
+    tier: { label: "티어", fn: byTier },
+    games: { label: "판수", fn: (a, b) => cur(b, "games", -1) - cur(a, "games", -1) },
+    winRate: { label: "승률", fn: (a, b) => cur(b, "winRate", -1) - cur(a, "winRate", -1) },
+    avgRank: { label: "평균 순위", fn: (a, b) => cur(a, "avgRank", 99) - cur(b, "avgRank", 99) },
     name: { label: "이름", fn: (a, b) => a.nickname.localeCompare(b.nickname, "ko") },
   };
-  const state = { sort: "tier", q: "" };
-  let DATA = null;
 
   async function load() {
     if (SAMPLE) $("#notice").innerHTML = `<div class="notice">예시 데이터로 채운 화면이에요. <a href="./">실제 데이터 보기</a></div>`;
@@ -284,8 +328,14 @@
       const res = await fetch(`${DATA_URL}?t=${Date.now()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(res.status);
       DATA = await res.json();
-      const ok = DATA.players.filter((p) => p.status === "ok");
-      [...ok].sort(SORTS.tier.fn).forEach((p, i) => (p.place = i + 1));
+      const m = $("#mode");
+      m.hidden = false;
+      m.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+        if (state.mode === b.dataset.mode) return;
+        state.mode = b.dataset.mode;
+        m.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+        render();
+      }));
       render();
     } catch (e) {
       showEmpty(String(e.message) === "404" ? "nodata" : "error", e);
@@ -312,32 +362,29 @@
     }));
     return [...map.values()].sort((a, b) => b.players - a.players || b.games - a.games);
   }
-  const tierLabel = (p) => `${p.tierName}${p.division ? " " + p.division : ""}`;
+  const tierLabel = (v) => `${v.tierName}${v.division ? " " + v.division : ""}`;
 
   function render() {
     const d = DATA;
     const all = d.players;
-    const ok = all.filter((p) => p.status === "ok");
-    const best = [...ok].sort(SORTS.tier.fn)[0];
-    const avg = ok.length ? ok.reduce((s, p) => s + p.rp, 0) / ok.length : null;
-    const pop = popular(ok);
+    const listed = all.filter((p) => view(p));
+    [...listed].sort(byTier).forEach((p, i) => (p.place = i + 1));
+    const pop = popular(all.filter((p) => p.status === "ok"));
 
     const season = d.seasonName ? d.seasonName.replace(/^Season\s*/i, "시즌 ") : null;
-    let lede = `${season ? esc(season) + " 기준으로 " : ""}${all.length}명 중 <b>${ok.length}명</b>이 랭크 기록이 있어요.`;
-    if (best) lede += ` 1위는 <b>${esc(best.nickname)}</b>(${esc(tierLabel(best))} · ${num(best.rp)} RP), 전체 평균은 ${num(avg)} RP예요.`;
-    $("#lede").innerHTML = lede;
-    $("#stamp").textContent = `${ago(d.updatedAt)} 갱신 · ${stamp(d.updatedAt)}`;
+    $("#stamp").textContent = [season, `${ago(d.updatedAt)} 갱신 · ${stamp(d.updatedAt)}`].filter(Boolean).join(" · ");
 
+    const distNote = state.mode === "peak" ? `최고 티어 기록이 있는 ${listed.length}명` : `이번 시즌 랭크 기록이 있는 ${listed.length}명`;
     $("#app").innerHTML = `
       <div class="overview">
         <section aria-labelledby="h-dist">
-          <h2 id="h-dist">티어 분포</h2>
-          <p class="h2-note">랭크 기록이 있는 ${ok.length}명</p>
-          ${distHtml(ok)}
+          <h2 id="h-dist">${state.mode === "peak" ? "최고 티어 분포" : "현재 티어 분포"}</h2>
+          <p class="h2-note">${distNote}</p>
+          ${distHtml(listed)}
         </section>
         <section aria-labelledby="h-picks">
           <h2 id="h-picks">많이 하는 실험체</h2>
-          <p class="h2-note">각자 판수가 많은 실험체 3명을 모아서 센 결과예요</p>
+          <p class="h2-note">이번 시즌 각자 판수가 많은 실험체 3명을 모아서 센 결과예요</p>
           ${picksHtml(pop)}
         </section>
       </div>
@@ -354,6 +401,7 @@
         </div>
         <div id="rows"></div>
       </section>`;
+    firstPaint = false;
 
     $("#q").addEventListener("input", (e) => { state.q = e.target.value; renderRows(); });
     document.querySelectorAll("[data-sort]").forEach((b) =>
@@ -365,10 +413,10 @@
     renderRows();
   }
 
-  function distHtml(ok) {
-    const counts = TIERS.map(([k]) => ok.filter((p) => p.tier === k).length);
+  function distHtml(listed) {
+    const counts = TIERS.map(([k]) => listed.filter((p) => view(p).tier === k).length);
     const max = Math.max(1, ...counts);
-    return `<ul class="dist">${TIERS.map(([k, name], i) => {
+    return `<ul class="dist ${firstPaint ? "first" : ""}">${TIERS.map(([k, name], i) => {
       const c = counts[i];
       return `<li class="${c ? "" : "zero"}" style="--tc:${tierColor(k)}">
         <span class="tn"><i></i>${name}</span>
@@ -392,39 +440,39 @@
 
   function renderRows() {
     const all = DATA.players.filter((p) => matches(p, state.q));
-    const ok = all.filter((p) => p.status === "ok").sort(SORTS[state.sort].fn);
-    const off = all.filter((p) => p.status !== "ok");
+    const on = all.filter((p) => view(p)).sort(SORTS[state.sort].fn);
+    const off = all.filter((p) => !view(p));
 
     let html = `<div class="row head">
-      <div>순위</div><div>플레이어</div><div>티어</div><div class="num-r">RP</div><div>랭킹</div><div>전적</div><div>많이 하는 실험체</div>
-    </div>` + ok.map(rowHtml).join("");
-    if (!ok.length) html += `<div class="empty">찾는 사람이 없어요.</div>`;
-    if (off.length) html += `<div class="group-label">기록 없음 ${off.length}명</div>` + off.map(offRowHtml).join("");
+      <div>순위</div><div>플레이어</div><div>${state.mode === "peak" ? "최고 티어" : "현재 티어"}</div><div class="num-r">RP</div><div>이번 시즌 랭킹</div><div>이번 시즌 전적</div><div>많이 하는 실험체</div>
+    </div>` + on.map(rowHtml).join("");
+    if (!on.length) html += `<div class="empty">찾는 사람이 없어요.</div>`;
+    if (off.length) html += `<div class="group-label">${state.mode === "peak" ? "티어 기록 없음" : "이번 시즌 기록 없음"} ${off.length}명</div>` + off.map(offRowHtml).join("");
     $("#rows").innerHTML = html;
   }
 
   function rowHtml(p) {
-    const crown = p.tier === "demigod" || p.tier === "eternity";
-    const progress = p.nextAt && p.divStart != null
-      ? Math.max(0, Math.min(1, (p.rp - p.divStart) / (p.nextAt - p.divStart))) : (crown ? 1 : null);
-    const toNext = p.nextAt ? `다음 단계까지 ${num(p.nextAt - p.rp)} RP` : (crown ? "서버 순위로 정해지는 티어" : "1000위 안에 들면 데미갓");
-    const pos = p.serverRank ? `서버 ${num(p.serverRank)}위` : (p.rank ? `${num(p.rank)}위` : "–");
-    const pct = p.rankPercent != null ? `상위 ${num(p.rankPercent, p.rankPercent < 10 ? 1 : 0)}%` : "";
-    const rec2 = [p.avgRank != null ? `평균 ${num(p.avgRank, 1)}등` : null, p.top3Rate != null ? `3등 안 ${num(p.top3Rate, 0)}%` : null].filter(Boolean).join(" · ");
+    const v = view(p);
+    const crown = v.tier === "demigod" || v.tier === "eternity";
+    const ok = p.status === "ok";
+    const pos = !ok ? "–" : p.serverRank ? `서버 ${num(p.serverRank)}위` : (p.rank ? `${num(p.rank)}위` : "–");
+    const pct = ok && p.rankPercent != null ? `상위 ${num(p.rankPercent, p.rankPercent < 10 ? 1 : 0)}%` : "";
+    const rec1 = ok ? `${num(p.games)}판 · 승률 ${num(p.winRate, 1)}%` : `<span class="sub">이번 시즌 기록 없음</span>`;
+    const rec2 = ok ? [p.avgRank != null ? `평균 ${num(p.avgRank, 1)}등` : null, p.top3Rate != null ? `3등 안 ${num(p.top3Rate, 0)}%` : null].filter(Boolean).join(" · ") : "";
     const mains = (p.mains || []).map((m, i) =>
       `<span class="${i ? "" : "first"}" title="${esc(m.name)} ${m.games}판${m.games ? `, 승률 ${num((m.wins / m.games) * 100, 0)}%` : ""}"><b>${esc(m.name)}</b><em>${m.games}판</em></span>`).join("");
     const staleTag = p.stale ? `<span class="tag" title="${esc(p.error || "")}">지난 데이터</span>` : "";
 
-    return `<div class="row ${p.place <= 3 ? "top" : ""}" style="--tc:${tierColor(p.tier)}">
+    return `<div class="row ${p.place <= 3 ? "top" : ""}" style="--tc:${tierColor(v.tier)}">
       <div class="c-rank">${p.place}</div>
       <div class="c-player"><div class="nick">${esc(p.nickname)}${staleTag}</div>${p.memo ? `<div class="memo">${esc(p.memo)}</div>` : ""}</div>
       <div class="c-tier">
         <span class="emblem ${crown ? "crown" : ""}" aria-hidden="true"></span>
-        <div><div class="tier-name">${esc(tierLabel(p))}</div><div class="sub">${toNext}</div></div>
+        <div><div class="tier-name">${esc(tierLabel(v))}</div><div class="sub">${esc(v.note)}</div></div>
       </div>
-      <div class="c-rp"><div class="rp">${num(p.rp)}<span class="sub"> RP</span></div>${progress != null ? `<div class="prog"><i style="width:${progress * 100}%"></i></div>` : ""}</div>
+      <div class="c-rp"><div class="rp">${num(v.rp)}<span class="sub"> RP</span></div>${v.progress != null ? `<div class="prog"><i style="width:${v.progress * 100}%"></i></div>` : ""}</div>
       <div class="c-pos"><div class="rec">${pos}</div><div class="sub">${pct}</div></div>
-      <div class="c-rec"><div class="rec">${num(p.games)}판 · 승률 ${num(p.winRate, 1)}%</div><div class="sub">${rec2}</div></div>
+      <div class="c-rec"><div class="rec">${rec1}</div><div class="sub">${rec2}</div></div>
       <div class="c-mains"><div class="mains">${mains || "–"}</div></div>
     </div>`;
   }
@@ -432,9 +480,9 @@
   function offRowHtml(p) {
     const reason = {
       not_found: "닉네임을 찾을 수 없어요. 닉네임을 바꿨다면 players.txt를 고쳐 주세요.",
-      unranked: "이번 시즌 랭크 기록이 없어요.",
+      unranked: state.mode === "peak" ? "확인한 시즌에 랭크 기록이 없어요." : "이번 시즌 랭크 기록이 없어요.",
       error: `조회하지 못했어요: ${p.error || "알 수 없는 오류"}`,
-    }[p.status] || "기록이 없어요.";
+    }[p.status] || (state.mode === "peak" ? "티어 기록이 없어요." : "이번 시즌 랭크 기록이 없어요.");
     return `<div class="row off">
       <div class="c-rank">–</div>
       <div class="c-player"><div class="nick">${esc(p.nickname)}</div>${p.memo ? `<div class="memo">${esc(p.memo)}</div>` : ""}</div>
