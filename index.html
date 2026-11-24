@@ -246,7 +246,7 @@
   <main id="app"><div class="empty">불러오는 중</div></main>
   <footer>
     <span>데이터: 이터널 리턴 Open API, 3시간마다 갱신</span>
-    <span>최고 티어는 이번 시즌 최고 RP, 시즌 11부터의 시즌 최종 RP, 그 전 시즌 기록 중 가장 높은 값이에요.</span>
+    <span>최고 티어는 이번 시즌 최고 RP, 시즌 11부터의 시즌 최종 RP, 직접 입력한 기록 중 가장 높은 값이에요. 직접 입력한 기록의 RP는 그 티어의 최저치예요.</span>
   </footer>
 </div>
 
@@ -286,7 +286,7 @@
     return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
 
-  const state = { mode: "peak", sort: "tier", q: "" };
+  const state = { mode: params.get("view") === "current" ? "current" : "peak", sort: "tier", q: "" };
   let DATA = null;
   let firstPaint = true;
 
@@ -296,7 +296,7 @@
       const k = p.peak;
       if (!k) return null;
       const note = k.source === "manual"
-        ? `${k.season ? k.season + " · " : ""}직접 입력 · RP는 티어 최저치`
+        ? `${k.season ? k.season + " · " : ""}직접 입력`
         : (k.source === "current" ? "이번 시즌 기록" : `${k.season} 기록`);
       return { tier: k.tier, tierName: k.tierName, division: k.division, rp: k.rp, note, progress: null };
     }
@@ -329,11 +329,18 @@
       if (!res.ok) throw new Error(res.status);
       DATA = await res.json();
       const m = $("#mode");
+      const buttons = m.querySelectorAll("button");
+      const mark = () => buttons.forEach((x) => x.setAttribute("aria-pressed", x.dataset.mode === state.mode));
       m.hidden = false;
-      m.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      mark();
+      buttons.forEach((b) => b.addEventListener("click", () => {
         if (state.mode === b.dataset.mode) return;
         state.mode = b.dataset.mode;
-        m.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+        mark();
+        // 주소에도 남겨서 그 상태 그대로 링크를 공유할 수 있게
+        const url = new URL(location.href);
+        if (state.mode === "current") url.searchParams.set("view", "current"); else url.searchParams.delete("view");
+        history.replaceState(null, "", url);
         render();
       }));
       render();
